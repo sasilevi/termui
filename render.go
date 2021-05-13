@@ -6,19 +6,9 @@ package termui
 
 import (
 	"image"
-	"io"
 	"sync"
 	"time"
 
-	"fmt"
-
-	"os"
-
-	"runtime/debug"
-
-	"bytes"
-
-	"github.com/maruel/panicparse/stack"
 	tm "github.com/nsf/termbox-go"
 )
 
@@ -99,44 +89,7 @@ func TermHeight() int {
 // Render renders all Bufferer in the given order from left to right,
 // right could overlap on left ones.
 func render(bs ...Bufferer) {
-	defer func() {
-		if e := recover(); e != nil {
-			Close()
-			fmt.Fprintf(os.Stderr, "Captured a panic(value=%v) when rendering Bufferer. Exit termui and clean terminal...\nPrint stack trace:\n\n", e)
-			//debug.PrintStack()
-			gs, err := stack.ParseDump(bytes.NewReader(debug.Stack()), os.Stderr, false)
-			if err != nil {
-				debug.PrintStack()
-				os.Exit(1)
-			}
-			buckets := stack.Aggregate(gs.Goroutines, stack.AnyValue)
 
-			srcLen := 0
-			pkgLen := 0
-			for _, bucket := range buckets {
-				for _, line := range bucket.Signature.Stack.Calls {
-					if l := len(line.SrcLine()); l > srcLen {
-						srcLen = l
-					}
-					if l := len(line.Func.PkgName()); l > pkgLen {
-						pkgLen = l
-					}
-				}
-			}
-
-
-			for _, bucket := range buckets {
-				//io.WriteString(os.Stdout, p.BucketHeader(&bucket, false, len(buckets) > 1))
-				for _, line := range bucket.Signature.Stack.Calls {
-					io.WriteString(os.Stdout, fmt.Sprintf(
-						"    %-*s %-*s %s(%s)\n",
-						pkgLen, line.Func.PkgName(), srcLen, line.SrcLine(),
-						line.Func.Name(), &line.Args))
-				}
-			}
-			os.Exit(1)
-		}
-	}()
 	for _, b := range bs {
 
 		buf := b.Buffer()
